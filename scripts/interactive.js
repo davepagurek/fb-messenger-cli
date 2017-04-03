@@ -15,6 +15,7 @@ var crypt = new Crypt('password');
 const path = require('path');
 const notifier = require('node-notifier');
 const imgcat = require('imgcat');
+const readline = require('readline');
 
 // 0 is select conversation, 1 is send message
 var action = 0;
@@ -30,6 +31,12 @@ var listeners = new Listeners();
 
 var atts = [];
 var attsNo = 0;
+
+const rlInterface = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  prompt: '> '
+});
 
 function InteractiveCli(){
   this.pull = new Pull();
@@ -196,6 +203,7 @@ InteractiveCli.prototype.printThread = function(){
   for (; x < lines.length; ++x) {
     console.log(lines[x]);
   }
+  rlInterface.prompt(true);
 };
 
 // TODO : remove early returns, use some sort of pattern
@@ -209,6 +217,7 @@ InteractiveCli.prototype.handler = function(choice) {
       action = data.action;
       currentThreadCount = data.threadCount;
       recipientId = '';
+      rlInterface.prompt(true);
     });
     return;
   }
@@ -220,6 +229,7 @@ InteractiveCli.prototype.handler = function(choice) {
       action = data.action;
       currentThreadCount = data.threadCount;
       recipientId = '';
+      rlInterface.prompt(true);
     });
     group = false;
     return;
@@ -232,6 +242,7 @@ InteractiveCli.prototype.handler = function(choice) {
       currentThreadCount = data.threadCount;
       group = true;
       recipientId = '';
+      rlInterface.prompt(true);
     });
     return;
   }
@@ -347,6 +358,7 @@ InteractiveCli.prototype.handler = function(choice) {
         emitter.emit('getConvos', current_userId, heading.getData(), function(data) {
           action = data.action;
           currentThreadCount = data.threadCount;
+          rlInterface.prompt(true);
         });
       }
     });
@@ -387,9 +399,12 @@ InteractiveCli.prototype.run = function(){
       emitter.emit('getConvos', current_userId, heading.getData(), function(data){
         action = data.action;
         currentThreadCount = data.threadCount;
+        rlInterface.prompt(true);
       });
 
-      stdin.addListener("data", interactive.handler);
+      rlInterface.on("line", interactive.handler);
+      rlInterface.on("close", interactive.exit);
+      rlInterface.prompt(true);
   });
 };
 
