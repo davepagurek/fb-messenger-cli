@@ -201,7 +201,7 @@ InteractiveCli.prototype.printThread = function(){
   // just show most recent visible lines
   var linesToWrite = lines.slice(x);
 
-  if (!Settings.getInstance().properties['disableColors']) {
+  if (Settings.getInstance().properties['preventMessageFlicker']) {
     // erase content on the line from before
     linesToWrite = linesToWrite.map(ln => "\x1b[K" + ln)
   }
@@ -222,6 +222,7 @@ InteractiveCli.prototype.handler = function(choice) {
       currentThreadCount = data.threadCount;
       recipientId = '';
       rlInterface.prompt(true);
+      recipientId = '';
     });
     return;
   }
@@ -234,6 +235,7 @@ InteractiveCli.prototype.handler = function(choice) {
       currentThreadCount = data.threadCount;
       recipientId = '';
       rlInterface.prompt(true);
+      recipientId = '';
     });
     group = false;
     return;
@@ -247,6 +249,7 @@ InteractiveCli.prototype.handler = function(choice) {
       group = true;
       recipientId = '';
       rlInterface.prompt(true);
+      recipientId = '';
     });
     return;
   }
