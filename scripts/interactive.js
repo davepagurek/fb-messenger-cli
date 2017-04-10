@@ -39,6 +39,12 @@ const rlInterface = readline.createInterface({
   prompt: '> '
 });
 
+const rlInterface = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  prompt: '> '
+});
+
 function InteractiveCli(){
   this.pull = new Pull();
   this.pull.on('message', this.readPullMessage);
@@ -109,7 +115,7 @@ InteractiveCli.prototype.initializeConversationViewFromFbid = function(id) {
   this.currentConversationId = id;
 
   // Unread messages in heading
-  heading.clearUnread();
+  heading.clearUnread(id);
 
   var recipientUrl;
   if (group) { recipientUrl = id; } else { recipientUrl = user.vanity; }
@@ -140,16 +146,18 @@ InteractiveCli.prototype.initializeConversationViewFromFbid = function(id) {
 InteractiveCli.prototype.readPullMessage = function(message) {
   var author = messenger.users[message.author];
 
-  try {
-    if (author !== undefined && author.id != messenger.userId && message.threadId != recipientId) {
-      notifier.notify({
-        title: author.name,
-        message: message.body,
-        icon: path.join(__dirname, '../resources/logo.png')
-      });
+  if (Settings.getInstance().properties['desktopNotifications']) {
+    try {
+      if (author !== undefined && author.id != messenger.userId && message.threadId != recipientId) {
+        notifier.notify({
+          title: author.name,
+          message: message.body,
+          icon: path.join(__dirname, '../resources/logo.png')
+        });
+      }
+    } catch (err) {
+      // Don't break over notifications
     }
-  } catch (err) {
-    // Don't break over notifications
   }
 
   if (author === undefined || message.otherUserId != recipientId || action === 0) {
@@ -220,6 +228,7 @@ InteractiveCli.prototype.handler = function(choice) {
     emitter.emit('getGroupConvos', current_userId, heading.getData(), function(data) {
       action = data.action;
       currentThreadCount = data.threadCount;
+      rlInterface.prompt(true);
       recipientId = '';
       rlInterface.prompt(true);
       recipientId = '';
@@ -233,6 +242,7 @@ InteractiveCli.prototype.handler = function(choice) {
     emitter.emit('getConvos', current_userId, heading.getData(), function(data){
       action = data.action;
       currentThreadCount = data.threadCount;
+      rlInterface.prompt(true);
       recipientId = '';
       rlInterface.prompt(true);
       recipientId = '';
@@ -247,6 +257,7 @@ InteractiveCli.prototype.handler = function(choice) {
       action = data.action
       currentThreadCount = data.threadCount;
       group = true;
+      rlInterface.prompt(true);
       recipientId = '';
       rlInterface.prompt(true);
       recipientId = '';
@@ -338,11 +349,10 @@ InteractiveCli.prototype.handler = function(choice) {
   }
 
   if(action === 0) {
-    if(isNaN(value)) {
-      console.log('Warning: Input is not a valid number'.yellow);
-    } else {
-      if(value >= 0 && value < currentThreadCount) {
-        emitter.emit('getMessages', value, null, function(id){
+    var selection = parseInt(value);
+    if(!isNaN(selection)) {
+      if(selection >= 0 && selection < currentThreadCount) {
+        emitter.emit('getMessages', selection, null, function(id){
           interactive.initializeConversationViewFromFbid(id);
         });
         action = 1;
@@ -351,6 +361,8 @@ InteractiveCli.prototype.handler = function(choice) {
         // Value is out of bounds
         console.log('Warning: Input is out of bounds'.yellow);
       }
+    } else {
+      console.log('Warning: Input is not a valid number'.yellow);
     }
   } else if(action === 1) {
     emitter.emit('sendMessage', value, recipientId);
